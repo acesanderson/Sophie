@@ -496,7 +496,7 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	# return course
 	pass
 
-# if __name__ == "__main__":
+# our main flow
 
 print ("Dreaming up the ideal course library...\n\n")
 course_briefs = create_course_briefs()
@@ -505,53 +505,9 @@ brief = random.choice(course_briefs)
 
 # our course which will be built up.
 course = Course()
-
-# Working with one brief to create our create_sme_prompt function.
-# brief = Course_Brief(title='Digital Marketing 101', audience='Marketing professionals looking to understand digital channels.', skills='SEO, SEM, Social Media Marketing, Email Marketing.')
-# add to course object
 course.brief = brief
-print(course.brief)
-
-# our SME creation phase
 course.sme = create_sme_prompt(course)
-print(course.sme)
-
-# Working with one sme to create our create_course_skills function.
-# sme = SME(persona="You are an experienced digital marketing professional and educator. You have a Master's degree or Ph.D. in Marketing, Communications, or a related field. You possess over 10 years of experience in digital marketing, having worked in various high-impact roles such as Digital Marketing Manager, SEO Expert, or Social Media Strategist. Your notable achievements include leading successful digital marketing campaigns for well-known brands, contributing to significant increases in online engagement and sales, or receiving industry awards for innovative digital marketing strategies.\n\nIn addition to your professional experience, you have over 5 years of teaching or mentoring experience. You have taught digital marketing courses at universities or professional training programs, receiving positive feedback from students for your engaging and practical teaching methods. Your teaching philosophy is centered around practical, hands-on learning, using real-world examples and case studies to illustrate key concepts. You believe in fostering a collaborative learning environment where students are encouraged to share their experiences and learn from one another.\n\nTeaching digital marketing to marketing professionals presents unique challenges, such as the rapidly changing nature of digital channels and the varying levels of prior knowledge among students. It is crucial to stay updated with the latest trends and technologies and to create content that is accessible to both beginners and more experienced marketers.\n\nWhen creating training for marketing professionals, keep in mind the importance of practical application. Ensure that the course includes actionable insights and tools that students can immediately implement in their own work. Emphasize the integration of digital marketing into broader marketing strategies and the importance of measuring and analyzing results to continuously improve and adapt strategies.")
-# course.sme = sme
-
-# our course skills creation phase
 course.skills = create_course_skills(course)
-print(course.skills)
-
-# Working with one course skills to create our create_toc function.
-# skills = Course_Skills(skills=['Search Engine Optimization (SEO)', 'Content Marketing', 'Social Media Marketing', 'Email Marketing', 'Affiliate Marketing', 'Pay-Per-Click Advertising (PPC)', 'Web Analytics', 'Conversion Rate Optimization (CRO)', 'Digital Branding', 'Customer Journey Mapping', 'Influencer Marketing', 'Mobile Marketing', 'Video Marketing', 'E-commerce Marketing'])
-# course.skills = skills
-
-# our TOC creation phase
 course.toc = create_toc(course)
-print(course.toc)
-
-# Working with one TOC to create our create_learning_objectives function.
-# toc = TOC(chapters=[TOC_Chapter(title='Introduction', videos=['Welcome to Digital Marketing 101: Unlocking Your Online Potential', 'Who This Course is For']), TOC_Chapter(title='Search Engine Optimization (SEO)', videos=['Understanding SEO: The Basics', 'Keyword Research and Strategy', 'On-Page Optimization Techniques', 'Off-Page SEO: Building Backlinks', 'SEO Tools and Analytics']), TOC_Chapter(title='Content Marketing', videos=['The Power of Content Marketing', 'Creating High-Quality Content', 'Content Distribution Strategies', 'Measuring Content Success']), TOC_Chapter(title='Social Media Marketing', videos=['Introduction to Social Media Marketing', 'Building a Social Media Strategy', 'Creating Engaging Social Media Content', 'Social Media Advertising', 'Analytics and Reporting for Social Media']), TOC_Chapter(title='Email Marketing', videos=['Introduction to Email Marketing', 'Building Your Email List', 'Crafting Effective Email Campaigns', 'Email Marketing Automation', 'Analyzing Email Performance']), TOC_Chapter(title='Affiliate Marketing', videos=['Getting Started with Affiliate Marketing', 'Choosing the Right Affiliates', 'Creating a Successful Affiliate Program', 'Tracking and Measuring Success']), TOC_Chapter(title='Pay-Per-Click Advertising (PPC)', videos=['PPC Fundamentals', 'Keyword Selection for PPC', 'Creating Effective PPC Ads', 'PPC Campaign Management', 'Analyzing PPC Performance']), TOC_Chapter(title='Web Analytics', videos=['Introduction to Web Analytics', 'Setting Up Google Analytics', 'Key Metrics and Reports', 'Analyzing User Behavior', 'Using Data to Improve Marketing Efforts']), TOC_Chapter(title='Conversion Rate Optimization (CRO)', videos=['Fundamentals of CRO', 'A/B Testing and Multivariate Testing', 'Optimizing Landing Pages', 'Using Analytics to Drive CRO', 'CRO Tools and Techniques']), TOC_Chapter(title='Digital Branding', videos=['Building a Digital Brand', 'Creating a Brand Strategy', 'Brand Positioning and Messaging', 'Maintaining Brand Consistency Online', 'Measuring Brand Equity']), TOC_Chapter(title='Customer Journey Mapping', videos=['Understanding the Customer Journey', 'Creating Customer Personas', 'Mapping the Customer Journey', 'Touchpoints and Channels Analysis', 'Improving Customer Experience']), TOC_Chapter(title='Influencer Marketing', videos=['Introduction to Influencer Marketing', 'Finding the Right Influencers', 'Building Influencer Relationships', 'Measuring Influencer Marketing Success']), TOC_Chapter(title='Mobile Marketing', videos=['Overview of Mobile Marketing', 'Creating Mobile-Friendly Content', 'Mobile Advertising Strategies', 'Measuring Mobile Marketing Success']), TOC_Chapter(title='Video Marketing', videos=['The Importance of Video Marketing', 'Creating Compelling Video Content', 'Distributing Videos Effectively', 'Video Analytics and Performance Measurement']), TOC_Chapter(title='E-commerce Marketing', videos=['Introduction to E-commerce Marketing', 'Driving Traffic to Your E-commerce Site', 'Optimizing Product Pages', 'E-commerce Sales Funnel', 'Retargeting and Upselling Strategies']), TOC_Chapter(title='Conclusion', videos=['Conclusion: Key Takeaways from Digital Marketing 101', 'Next Steps for Your Digital Marketing Journey'])])
-# course.toc = toc
-
-# our learning objectives creation phase
 course.learning_objectives = create_learning_objectives_course(course)
-print(course.learning_objectives)
-
-"""
-- Next up:
-x	- SME writes video notes
-		- preseed with intro and conclusion video examples (introduction, who this is for, conclusion, next steps)
-x		- this is done iteratively, so SME can see what was written before
-x		- use some intermediate step from UbD (don't overthink this)
-		- use a corpus of examples (synthetically constructed, use claude manually for this)
-	- Instructional Designer writes the actual texts
-		- preseed with intro and conclusion video examples (introduction, who this is for, conclusion, next steps)
-		- use a corpus of examples (synthetically constructed, use claude manually for this)
-		- this is done iteratively, so ID can see what was written before
-	- Content is converted to text (using the function we already created)
-	- Pretty print
-"""
 
