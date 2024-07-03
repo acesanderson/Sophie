@@ -348,6 +348,20 @@ class Learning_Objectives_Course(BaseModel):
 	"""
 	chapters: List[Learning_Objectives_Chapter]
 
+class Content_Section(BaseModel):
+	"""
+	Created at the content creation stage.
+	"""
+	title: str
+	content: str
+
+class Content_Chapter(BaseModel):
+	"""
+	Created at the content creation stage.
+	"""
+	title: str
+	content: List[Content_Section]
+
 class Content(BaseModel):
 	"""
 	Created at the content creation stage.
@@ -446,7 +460,7 @@ def create_toc(course: Course) -> TOC:
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives(section: str, previous_section = None) -> Learning_Objectives_Section:
+def create_learning_objectives(course: Course, section: str, previous_section = None) -> Learning_Objectives_Section:
 	"""
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
@@ -469,7 +483,7 @@ def create_learning_objectives_course(course: Course) -> Learning_Objectives_Cou
 		chapter_title = chapter.title
 		learning_objectives_chapter = []
 		for section in chapter.sections:
-			learning_objectives = create_learning_objectives(section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
+			learning_objectives = create_learning_objectives(course = course, section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
 			learning_objectives_chapter.append(learning_objectives)
 		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
 	return Learning_Objectives_Course(chapters = learning_objectives_toc)
@@ -494,6 +508,12 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	# course.content = create_content(course)
 	# course.text = convert_course_content_to_txt(course)
 	# return course
+	pass
+
+def write_section(course: Course, section: Learning_Objectives_Section) -> Content_Section:
+	"""
+	With the course briefs, we generate the content.
+	"""
 	pass
 
 # our main flow
