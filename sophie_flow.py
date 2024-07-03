@@ -4,6 +4,7 @@ Experimenting with generating PromptFlow objects from the Publishing Philosophy 
 from pydantic import BaseModel
 from Chain import Chain, Model, Prompt, Parser
 from typing import List, Optional
+import random
 
 natural_language_description = """
 The company Sophie, Inc. creates text-based courses.
@@ -87,11 +88,10 @@ for the customers' bottom line as they adapt best practices.
 The average Sophie, Inc. text-based course is 4 hours long, and purely text based.
 The courses are aimed at foundational topics, like "Digital Marketing 101" or "Human Resources 101".
 
-They will have three parts of their library:
-- leadership and management courses
-- soft skills courses (like Negotiation, Communication, Presentation Skills, etc.)
-- business function courses
-- technical skills courses (software development and IT)
+Here's a description of their ideal course library:
+==========================
+{{library_segments}}
+==========================
 
 ### Task
 
@@ -191,7 +191,7 @@ Here is the TOC for overall course:
 {{toc}}
 
 The section that you've been asked to create the learning objectives for is titled:
-{{section}}
+{{section_title}}
 
 Here are the learning objectives for the previous section for reference:
 {{previous_section}}
@@ -243,6 +243,10 @@ Here are some parts of the UbD process you can leverage to create these learning
 ## 9. Cross-reference with Other Segments
 1. Note any connections or references to other parts of the course.
 2. Suggest ways to reinforce or build upon concepts from other segments.
+
+For your answer, please return:
+(1) the section title (verbatim)
+(2) the learning objectives for that section
 """
 
 content_prompt = """
@@ -321,12 +325,28 @@ class Content_Chapter(BaseModel):
 	title: str
 	content: List[Content_Section]
 
-class Learning_Objectives(BaseModel):
+class Learning_Objectives_Section(BaseModel):
 	"""
 	Created at the learning objective creation stage.
 	This is a string containing the learning objectives for a given Section of a course.
 	"""
+	section_title: str
 	learning_objectives: str
+
+class Learning_Objectives_Chapter(BaseModel):
+	"""
+	Created at the learning objective creation stage.
+	This is a list of Learning_Objectives_Section objects.
+	"""
+	title: str
+	sections: List[Learning_Objectives_Section]
+
+class Learning_Objectives_Course(BaseModel):
+	"""
+	Created at the learning objective creation stage.
+	This is a list of Learning_Objectives_Chapter objects.
+	"""
+	chapters: List[Learning_Objectives_Chapter]
 
 class Content(BaseModel):
 	"""
@@ -344,7 +364,7 @@ class Course(BaseModel):
 	sme: Optional[SME] = None
 	skills: Optional[Course_Skills] = None
 	toc: Optional[TOC] = None
-	learning_objectives: Optional[List[List[Learning_Objectives]]] = None
+	learning_objectives: Optional[Learning_Objectives_Course] = None
 	content: Optional[Content] = None
 	text: Optional[str] = None
 	
@@ -426,15 +446,15 @@ def create_toc(course: Course) -> TOC:
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives(section: str, previous_section = None) -> Learning_Objectives:
+def create_learning_objectives(section: str, previous_section = None) -> Learning_Objectives_Section:
 	"""
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
 	"""
-	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section': section, 'previous_section': previous_section, 'course_format': course_format}
+	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section, 'previous_section': previous_section, 'course_format': course_format}
 	prompt = Prompt(learning_objectives_prompt)
 	model = Model('gpt')
-	parser = Parser(Learning_Objectives)
+	parser = Parser(Learning_Objectives_Section)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
 	return response.content
@@ -455,22 +475,24 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	# course.sme = create_sme_prompt(course)
 	# course.skills = create_course_skills(course)
 	# course.toc = create_toc(course)
+	# course.learning_objectives = create_learning_objectives(course)
 	# course.content = create_content(course)
 	# course.text = convert_course_content_to_txt(course)
 	# return course
 	pass
 
 # if __name__ == "__main__":
-# print ("Dreaming up the ideal course library...\n\n")
-# course_briefs = create_course_briefs()
-# print("\n\nPicking first course:\n\n")
-# brief = course_briefs[0]
+
+print ("Dreaming up the ideal course library...\n\n")
+course_briefs = create_course_briefs()
+print("\n\nPicking one course:\n\n")
+brief = random.choice(course_briefs)
 
 # our course which will be built up.
 course = Course()
 
 # Working with one brief to create our create_sme_prompt function.
-brief = Course_Brief(title='Digital Marketing 101', audience='Marketing professionals looking to understand digital channels.', skills='SEO, SEM, Social Media Marketing, Email Marketing.')
+# brief = Course_Brief(title='Digital Marketing 101', audience='Marketing professionals looking to understand digital channels.', skills='SEO, SEM, Social Media Marketing, Email Marketing.')
 # add to course object
 course.brief = brief
 print(course.brief)
@@ -502,14 +524,14 @@ print(course.toc)
 # our learning objectives creation phase
 learning_objectives_toc = []
 for chapter in course.toc.chapters[:1]:
+	chapter_title = chapter.title
 	learning_objectives_chapter = []
 	for section in chapter.sections:
 		learning_objectives = create_learning_objectives(section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
 		learning_objectives_chapter.append(learning_objectives)
-	learning_objectives_toc.append(learning_objectives_chapter)
+	learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
 
-# add to course object
-course.learning_objectives = learning_objectives_toc
+course.learning_objectives = Learning_Objectives_Course(chapters = learning_objectives_toc)
 
 """
 - Next up:
@@ -526,4 +548,3 @@ x		- use some intermediate step from UbD (don't overthink this)
 	- Pretty print
 """
 
-# 
