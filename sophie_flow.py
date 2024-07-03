@@ -30,16 +30,41 @@ There is also a team of content writers, editors, QA specialists, and a managing
 We want a workflow that takes a course title as input and outputs a completed course.
 """.strip()
 
-"""
-course_planning
-SME_generation
-- metaprompt
-content_creation
-- create TOC
-- write the course
-content_editing
-- 
-"""
+course_format = """
+- **Total Chapters**: 6-8
+
+The first Chapter should be titled "Introduction", and be composed of two videos:
+1. an overview of the course objectives and structure, with an evocative title that captures
+the value proposition of the course for the learner.
+2. a video titled "Who this course is for" which sets the right expectations for the learner.
+
+The last Chapter should be titled "Conclusion", and have two videos:
+1. a "Conclusion" video providing a pithy summary of the course content and key takeaways
+2. a "Next Steps" video with suggestions for further learning or practice
+
+The remaining chapters are the body of the course.
+
+- **Sections per Chapter**: 3-4 sections
+- **Words per Section**: 1,000 - 1500 words
+
+This structure ensures each course is thorough yet broken down into manageable segments that facilitate
+comprehension and retention, aligned with typical learning and attention spans.
+""".strip()
+
+library_segments = """
+Their library will address the following audiences:
+- people managers
+- people who want to start (or pivot to) a new career.
+- people who want to improve in their current career.
+
+Sophie Inc.'s business model will be to sell to large companies, so they will focus on a mix of business and technology skills. Their library will have the following segments:
+- Leadership and Management (examples: becoming a manager, organizational leadership, strategic planning): 20% of courses
+- Professional Development (examples: interpersonal communication, negotiation, executive presence): 15% of courses
+- Business Functions (examples: Marketing, Sales, Finance): 15% of courses
+- Business software (examples: Excel, SAP, Salesforce): 10% of courses
+- Software development (examples: Java development, web development. machine learning) 20% of courses
+- IT administration (examples: linux administration, database administration, network engineering) 20% of courses
+""".strip()
 
 # Prompts
 
@@ -117,10 +142,14 @@ Please come up with a list of the important sub skills for this course.
 This will inform the actual writing of the course.
 """.strip()
 
-
 toc_creation_prompt = """
 You are subject matter expert who has been asked to write a course.
 {{persona}}
+
+The company you work for produces text-baseed courses in this format:
+==========================
+{{course_format}}
+==========================
 
 The course title is: {{title}}
 The audience for this course is: {{audience}}
@@ -132,19 +161,89 @@ in a logical sequence that facilitates learning and skill development. Each chap
 should be clearly defined and aligned with the course objectives. Include the main
 topics to be covered in each chapter, as well as any subtopics or key points that
 should be addressed.
-
-The first Chapter should be titled "Introduction", and be composed of two videos:
-- an overview of the course objectives and structure, with an evocative title that captures
-the value proposition of the course for the learner.
-- a video titled "Who this course is for" which sets the right expectations for the learner.
-
-The last Chapter should be titled "Conclusion", and have two videos:
-- a "Conclusion" video providing a pithy summary of the course content and key takeaways
-- a "Next Steps" video with suggestions for further learning or practice
-
-The remainder of the course structure is up to you.
 """.strip()
 
+learning_objectives_prompt = """
+You are an instructional designer who has extensive experience in both higher ed and the corporate training
+and learning and development worlds. You make strong use of the Understanding by Design (UbD) framework
+and can apply it to a variety of domains in collaboration with subject matter experts to create impactful
+text-based courses.
+
+The courses you create are text-based, hosted online, and are aimed at large enterprises looking to upskill
+employees. These courses are expertly designed to both help companies fill important skill gaps to improve performance
+as well as providing tangible career advice to employees.
+
+The company you work for produces text-baseed courses in this format:
+==========================
+{{course_format}}
+==========================
+
+You have just been asked to craft the learning objectives for the section of a course titled:
+{{title}}
+
+This course is aimed at this audience:
+{{audience}}
+
+Here are the high-level skills that need to be covered in this course:
+{{skills}}
+
+Here is the TOC for overall course:
+{{toc}}
+
+The section that you've been asked to create the learning objectives for is titled:
+{{section}}
+
+Here are the learning objectives for the previous section for reference:
+{{previous_section}}
+
+Please use your considerable expertise at converting skills into learning objectives to create a set of learning objectives
+for this video.
+
+Here are some parts of the UbD process you can leverage to create these learning objectives:
+
+## 1. Identify Desired Results (Stage 1 of UbD)
+
+1. Review the course's overall desired skills list.
+2. For each segment:
+   a. Identify specific learning objectives that align with the overall course goals.
+   b. List key concepts or skills to be covered.
+   c. Determine what students should know, understand, and be able to do after completing the segment.
+
+## 2. Determine Acceptable Evidence (Stage 2 of UbD)
+1. For each segment:
+   a. Define how students will demonstrate their understanding of the content.
+   b. Design potential assessment questions or tasks.
+   c. Outline criteria for successful performance.
+
+## 3. Plan Learning Experiences and Instruction (Stage 3 of UbD)
+1. For each segment:
+   a. Brainstorm engaging learning activities that align with objectives.
+   b. Sequence the content logically.
+   c. Identify potential examples, analogies, or case studies to illustrate key points.
+
+## 4. Consider Prerequisite Knowledge
+1. Identify any prerequisite knowledge or skills needed for the segment.
+2. Note connections to previous segments or chapters.
+
+## 5. Anticipate Challenges
+1. List potential areas of confusion or difficulty for learners.
+2. Suggest strategies to address these challenges.
+
+## 6. Provide Resources
+1. List key resources (e.g., articles, videos, tools) that could support learning.
+2. Suggest additional materials for learners who want to dive deeper.
+
+## 7. Summarize Key Takeaways
+1. Bullet point the most important concepts or skills from the segment.
+2. Explain how these contribute to the overall course goals.
+
+## 8. Suggest Practical Applications
+1. Provide ideas for how learners can apply the knowledge or skills from this segment in real-world scenarios.
+
+## 9. Cross-reference with Other Segments
+1. Note any connections or references to other parts of the course.
+2. Suggest ways to reinforce or build upon concepts from other segments.
+"""
 
 content_prompt = """
 2. Outline best practices for course creation, including:
@@ -200,7 +299,7 @@ class TOC_Chapter(BaseModel):
 	Created at TOC stage.
 	"""
 	title: str
-	videos: List[str]
+	sections: List[str]
 
 class TOC(BaseModel):
 	"""
@@ -208,7 +307,7 @@ class TOC(BaseModel):
 	"""
 	chapters: List[TOC_Chapter]
 
-class Content_Video(BaseModel):
+class Content_Section(BaseModel):
 	"""
 	Created at Content creation stage.
 	"""
@@ -220,7 +319,14 @@ class Content_Chapter(BaseModel):
 	Created at Content creation stage.
 	"""
 	title: str
-	content: List[Content_Video]
+	content: List[Content_Section]
+
+class Learning_Objectives(BaseModel):
+	"""
+	Created at the learning objective creation stage.
+	This is a string containing the learning objectives for a given Section of a course.
+	"""
+	learning_objectives: str
 
 class Content(BaseModel):
 	"""
@@ -238,6 +344,7 @@ class Course(BaseModel):
 	sme: Optional[SME] = None
 	skills: Optional[Course_Skills] = None
 	toc: Optional[TOC] = None
+	learning_objectives: Optional[List[List[Learning_Objectives]]] = None
 	content: Optional[Content] = None
 	text: Optional[str] = None
 	
@@ -311,10 +418,23 @@ def create_toc(course: Course) -> TOC:
 	With the course briefs, we generate the TOCs.
 	"""
 	print("\n\nOur SME is creating TOC...\n\n")
-	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'persona': course.sme.persona}
+	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'persona': course.sme.persona, 'course_format': course_format}
 	prompt = Prompt(toc_creation_prompt)
 	model = Model('gpt')
 	parser = Parser(TOC)
+	chain = Chain(prompt, model, parser)
+	response = chain.run(input_variables = input_variables)
+	return response.content
+
+def create_learning_objectives(section: str, previous_section = None) -> Learning_Objectives:
+	"""
+	With the brief and the course skills, generate the learning objectives for a section.
+	This should provide an example of the previous section if available.
+	"""
+	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section': section, 'previous_section': previous_section, 'course_format': course_format}
+	prompt = Prompt(learning_objectives_prompt)
+	model = Model('gpt')
+	parser = Parser(Learning_Objectives)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
 	return response.content
@@ -375,13 +495,35 @@ print(course.skills)
 course.toc = create_toc(course)
 print(course.toc)
 
-# Working with one TOC to create our create_content function.
+# Working with one TOC to create our create_learning_objectives function.
 # toc = TOC(chapters=[TOC_Chapter(title='Introduction', videos=['Welcome to Digital Marketing 101: Unlocking Your Online Potential', 'Who This Course is For']), TOC_Chapter(title='Search Engine Optimization (SEO)', videos=['Understanding SEO: The Basics', 'Keyword Research and Strategy', 'On-Page Optimization Techniques', 'Off-Page SEO: Building Backlinks', 'SEO Tools and Analytics']), TOC_Chapter(title='Content Marketing', videos=['The Power of Content Marketing', 'Creating High-Quality Content', 'Content Distribution Strategies', 'Measuring Content Success']), TOC_Chapter(title='Social Media Marketing', videos=['Introduction to Social Media Marketing', 'Building a Social Media Strategy', 'Creating Engaging Social Media Content', 'Social Media Advertising', 'Analytics and Reporting for Social Media']), TOC_Chapter(title='Email Marketing', videos=['Introduction to Email Marketing', 'Building Your Email List', 'Crafting Effective Email Campaigns', 'Email Marketing Automation', 'Analyzing Email Performance']), TOC_Chapter(title='Affiliate Marketing', videos=['Getting Started with Affiliate Marketing', 'Choosing the Right Affiliates', 'Creating a Successful Affiliate Program', 'Tracking and Measuring Success']), TOC_Chapter(title='Pay-Per-Click Advertising (PPC)', videos=['PPC Fundamentals', 'Keyword Selection for PPC', 'Creating Effective PPC Ads', 'PPC Campaign Management', 'Analyzing PPC Performance']), TOC_Chapter(title='Web Analytics', videos=['Introduction to Web Analytics', 'Setting Up Google Analytics', 'Key Metrics and Reports', 'Analyzing User Behavior', 'Using Data to Improve Marketing Efforts']), TOC_Chapter(title='Conversion Rate Optimization (CRO)', videos=['Fundamentals of CRO', 'A/B Testing and Multivariate Testing', 'Optimizing Landing Pages', 'Using Analytics to Drive CRO', 'CRO Tools and Techniques']), TOC_Chapter(title='Digital Branding', videos=['Building a Digital Brand', 'Creating a Brand Strategy', 'Brand Positioning and Messaging', 'Maintaining Brand Consistency Online', 'Measuring Brand Equity']), TOC_Chapter(title='Customer Journey Mapping', videos=['Understanding the Customer Journey', 'Creating Customer Personas', 'Mapping the Customer Journey', 'Touchpoints and Channels Analysis', 'Improving Customer Experience']), TOC_Chapter(title='Influencer Marketing', videos=['Introduction to Influencer Marketing', 'Finding the Right Influencers', 'Building Influencer Relationships', 'Measuring Influencer Marketing Success']), TOC_Chapter(title='Mobile Marketing', videos=['Overview of Mobile Marketing', 'Creating Mobile-Friendly Content', 'Mobile Advertising Strategies', 'Measuring Mobile Marketing Success']), TOC_Chapter(title='Video Marketing', videos=['The Importance of Video Marketing', 'Creating Compelling Video Content', 'Distributing Videos Effectively', 'Video Analytics and Performance Measurement']), TOC_Chapter(title='E-commerce Marketing', videos=['Introduction to E-commerce Marketing', 'Driving Traffic to Your E-commerce Site', 'Optimizing Product Pages', 'E-commerce Sales Funnel', 'Retargeting and Upselling Strategies']), TOC_Chapter(title='Conclusion', videos=['Conclusion: Key Takeaways from Digital Marketing 101', 'Next Steps for Your Digital Marketing Journey'])])
 # course.toc = toc
 
-# our content creation phase
-# written_chapters = []
-# for chapter in course.toc.chapters:
-# 	written_videos = []
-# 	for video in chapter.videos:
-# 		written_videos.append(Content_Video(title=video, content="This is the content for the video."))
+# our learning objectives creation phase
+learning_objectives_toc = []
+for chapter in course.toc.chapters[:1]:
+	learning_objectives_chapter = []
+	for section in chapter.sections:
+		learning_objectives = create_learning_objectives(section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
+		learning_objectives_chapter.append(learning_objectives)
+	learning_objectives_toc.append(learning_objectives_chapter)
+
+# add to course object
+course.learning_objectives = learning_objectives_toc
+
+"""
+- Next up:
+x	- SME writes video notes
+		- preseed with intro and conclusion video examples (introduction, who this is for, conclusion, next steps)
+x		- this is done iteratively, so SME can see what was written before
+x		- use some intermediate step from UbD (don't overthink this)
+		- use a corpus of examples (synthetically constructed, use claude manually for this)
+	- Instructional Designer writes the actual texts
+		- preseed with intro and conclusion video examples (introduction, who this is for, conclusion, next steps)
+		- use a corpus of examples (synthetically constructed, use claude manually for this)
+		- this is done iteratively, so ID can see what was written before
+	- Content is converted to text (using the function we already created)
+	- Pretty print
+"""
+
+# 
