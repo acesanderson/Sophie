@@ -34,14 +34,14 @@ We want a workflow that takes a course title as input and outputs a completed co
 course_format = """
 - **Total Chapters**: 6-8
 
-The first Chapter should be titled "Introduction", and be composed of two videos:
+The first Chapter should be titled "Introduction", and be composed of two sections:
 1. an overview of the course objectives and structure, with an evocative title that captures
 the value proposition of the course for the learner.
-2. a video titled "Who this course is for" which sets the right expectations for the learner.
+2. a section titled "Who this course is for" which sets the right expectations for the learner.
 
-The last Chapter should be titled "Conclusion", and have two videos:
-1. a "Conclusion" video providing a pithy summary of the course content and key takeaways
-2. a "Next Steps" video with suggestions for further learning or practice
+The last Chapter should be titled "Conclusion", and have two sections:
+1. a "Conclusion" section providing a pithy summary of the course content and key takeaways
+2. a "Next Steps" section with suggestions for further learning or practice
 
 The remaining chapters are the body of the course.
 
@@ -197,7 +197,7 @@ Here are the learning objectives for the previous section for reference:
 {{previous_section}}
 
 Please use your considerable expertise at converting skills into learning objectives to create a set of learning objectives
-for this video.
+for this section.
 
 Here are some parts of the UbD process you can leverage to create these learning objectives:
 
@@ -384,14 +384,14 @@ def convert_course_content_to_txt(course: Course) -> str:
 	text += "Table of Contents\n\n"
 	for chapter in course.toc.chapters:
 		text += f"{chapter.title}\n"
-		for video in chapter.videos:
+		for section in chapter.sections:
 			text += f"  - {video}\n"
 	text += "\nCourse Content\n\n"
 	for chapter in course.content.chapters:
 		text += f"{chapter.title}\n"
-		for video in chapter.content:
-			text += f"  - {video.title}\n"
-			text += f"    {video.content}\n"
+		for section in chapter.content:
+			text += f"  - {section.title}\n"
+			text += f"    {section.content}\n"
 	return text
 
 # Our chains
@@ -459,6 +459,21 @@ def create_learning_objectives(section: str, previous_section = None) -> Learnin
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
+def create_learning_objectives_course(course: Course) -> Learning_Objectives_Course:
+	"""
+	Wrapper function.
+	With the course briefs, we generate the learning objectives.
+	"""
+	learning_objectives_toc = []
+	for chapter in course.toc.chapters[:1]:
+		chapter_title = chapter.title
+		learning_objectives_chapter = []
+		for section in chapter.sections:
+			learning_objectives = create_learning_objectives(section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
+			learning_objectives_chapter.append(learning_objectives)
+		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
+	return Learning_Objectives_Course(chapters = learning_objectives_toc)
+
 def create_content(course: Course) -> Content:
 	"""
 	With the course briefs, we generate the content.
@@ -522,16 +537,8 @@ print(course.toc)
 # course.toc = toc
 
 # our learning objectives creation phase
-learning_objectives_toc = []
-for chapter in course.toc.chapters[:1]:
-	chapter_title = chapter.title
-	learning_objectives_chapter = []
-	for section in chapter.sections:
-		learning_objectives = create_learning_objectives(section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
-		learning_objectives_chapter.append(learning_objectives)
-	learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
-
-course.learning_objectives = Learning_Objectives_Course(chapters = learning_objectives_toc)
+course.learning_objectives = create_learning_objectives_course(course)
+print(course.learning_objectives)
 
 """
 - Next up:
