@@ -644,41 +644,33 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	Wrapper function.
 	With the course briefs, we generate the course.
 	"""
-	# course = Course()
-	# course.brief = brief
-	# course.sme = create_sme_prompt(course)
-	# course.skills = create_course_skills(course)
-	# course.toc = create_toc(course)
-	# course.learning_objectives = create_learning_objectives(course)
-	# course.content = create_content(course)
-	# course.text = convert_course_content_to_txt(course)
-	# return course
-	pass
+	course = Course()
+	course.brief = brief
+	course.sme = create_sme_prompt(course)
+	course.skills = create_course_skills(course)
+	course.toc = create_toc(course)
+	course.learning_objectives = create_learning_objectives_course(course)
+	course.content = create_content(course)
+	course.text = convert_course_content_to_txt(course)
+	return course
 
+if __name__ == "__main__":
+	print("Dreaming up the ideal course library...\n\n")
+	course_briefs = create_course_briefs()
+	print("\n\nPicking one course:\n\n")
+	brief = random.choice(course_briefs)
+	course = create_course_from_brief(brief)
+	print("=======================================================")
+	for key in course.__dict__.keys():
+		print(f"{key}: {course.__dict__[key]}")
 
-# our main flow
-
-print ("Dreaming up the ideal course library...\n\n")
-course_briefs = create_course_briefs()
-print("\n\nPicking one course:\n\n")
-brief = random.choice(course_briefs)
-
-# our course which will be built up.
-course = Course()
-course.brief = brief
-course.sme = create_sme_prompt(course)
-course.skills = create_course_skills(course)
-course.toc = create_toc(course)
-course.learning_objectives = create_learning_objectives_course(course)
-course.content = create_content(course)
-course.text = convert_course_content_to_txt(course)
 
 """
-x - add preferred model to each function
 - tighten up course length, wtf is this (15+ chapters??)
 - fix markdown styling within prompts + the final print function
-- create the object-> string function
 - add a cap to each wrapper function
 - async for wrapper functions
 - save Course objects to a special Sophie collection in MongoDB
+x - add preferred model to each function
+x - create the object-> string function
 """
