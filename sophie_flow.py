@@ -616,18 +616,33 @@ if __name__ == "__main__":
 	course_briefs = create_course_briefs()
 	print("Picking one course:")
 	brief = random.choice(course_briefs)
-	course = create_course_from_brief(brief, cap = 1) # throttling this for testing purposes; remove cap to create entire course. cap = number of chapters to create.
+	course = create_course_from_brief(brief, cap = 2) # throttling this for testing purposes; remove cap to create entire course. cap = number of chapters to create.
 	print("=======================================================")
 	for key in course.__dict__.keys():
 		print(f"{key}: {course.__dict__[key]}")
 
 """
-x - incorporate the SME into the content writing
-x - add a cap to each wrapper function
-x - tighten up course length, wtf is this (15+ chapters??)
-- fix markdown styling within prompts + the final print function
 - async for wrapper functions
 - save Course objects to a special Sophie collection in MongoDB
 x - add preferred model to each function
 x - create the object-> string function
+x - incorporate the SME into the content writing
+x - add a cap to each wrapper function
+x - tighten up course length, wtf is this (15+ chapters??)
+x - fix markdown styling within prompts + the final print function
 """
+
+from Chain import Prompt, Model, Parser, Chain
+from pydantic import BaseModel
+from typing import List, Optional
+
+class Objects(BaseModel):
+	objects: List[str]
+
+prompts = ['birds', 'mammals', 'presidents', 'planets', 'countries', 'cities']
+prompt_template = Prompt("Name ten {{objects}}.")
+prompts = [prompt_template.render(input_variables = {'objects': prompt}) for prompt in prompts]
+model = Model('gpt3')
+results = model.run_async(prompts, pydantic_model = Objects, verbose = False
+
+
