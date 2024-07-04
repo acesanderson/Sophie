@@ -70,8 +70,8 @@ You are an expert instructional designer and content creator tasked with writing
 ## Formatting Guidelines
 
 Use Obsidian-flavored Markdown for formatting. Include the following elements:
-1. Section title as a level 1 heading (H1)
-2. Subtopics as level 2 headings (H2)
+1. Section title as a level 3 heading (H3)
+2. Subtopics as level 4 headings (H4)
 3. Bullet points for lists of items or key points
 4. Numbered lists for sequential steps or processes
 5. Bold text for emphasis on key terms or important concepts
@@ -83,11 +83,11 @@ Use Obsidian-flavored Markdown for formatting. Include the following elements:
 ## Example Formatting
 
 ```markdown
-# [Insert Engaging Section Title]
+### [Insert Engaging Section Title]
 
 [Brief introduction to the section]
 
-## [Subtopic 1]
+#### [Subtopic 1]
 
 [Content for subtopic 1, including examples and practical applications]
 
@@ -95,7 +95,7 @@ Use Obsidian-flavored Markdown for formatting. Include the following elements:
 - Key point 2
 - Key point 3
 
-## [Subtopic 2]
+#### [Subtopic 2]
 
 [Content for subtopic 2, including examples and practical applications]
 
@@ -105,7 +105,7 @@ Use Obsidian-flavored Markdown for formatting. Include the following elements:
 
 > Important quote or key takeaway
 
-## [Subtopic 3]
+#### [Subtopic 3]
 
 [Content for subtopic 3, including examples and practical applications]
 
@@ -116,7 +116,7 @@ Use Obsidian-flavored Markdown for formatting. Include the following elements:
 
 [Section conclusion and connection to next section/chapter]
 
-### Key Takeaways
+#### Key Takeaways
 - [Bullet point summary of main points]
 ```
 
@@ -353,30 +353,6 @@ Please use your considerable expertise at converting learning objectives into we
 and informative section for this course.
 """.strip()
 
-content_prompt = """
-2. Outline best practices for course creation, including:
-   - Structuring content for optimal learning
-   - Engaging presentation techniques
-   - Incorporating practical examples and case studies
-   - Addressing diverse learning styles
-
-3. Provide guidelines for ensuring course quality:
-   - Accuracy and up-to-date information
-   - Clarity and conciseness in explanations
-   - Logical flow and progression of ideas
-   - Appropriate depth and breadth of content
-
-4. Suggest methods for incorporating the specified skills:
-   - Integrating skill development throughout the course
-   - Providing opportunities for practical application
-   - Assessing skill acquisition
-
-5. Emphasize the importance of:
-   - Learner-centric approach
-   - Inclusive and accessible content
-   - Ethical considerations relevant to the field
-""".strip()
-
 # Our Pydantic Classes
 
 class Course_Brief(BaseModel):
@@ -499,12 +475,12 @@ def convert_course_content_to_txt(course: Course) -> str:
 	Converts the course content to a text string.
 	"""
 	course_text = ""
+	course_text += f"# {course.brief.title}\n"
 	for chapter in course.content.chapters:
-		print(f"\n# {chapter.title}")
-		course_text += f"\n\n# {chapter.title}\n\n"
+		print(f"\n## {chapter.title}")
+		course_text += f"## {chapter.title}\n"
 		for section in chapter.content:
 			print(f"\t# {section.title}")
-			course_text += f"\n\n# {section.title}\n\n"
 			course_text += section.content
 	return course_text
 
@@ -574,7 +550,7 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives_course(course: Course, model = 'gpt3', cap = None) -> Learning_Objectives_Course:
+def create_learning_objectives_course(course: Course, model = 'haiku', cap = None) -> Learning_Objectives_Course:
 	"""
 	Wrapper function.
 	With the course briefs, we generate the learning objectives.
@@ -604,17 +580,17 @@ def write_section(course: Course, section: Learning_Objectives_Section, previous
 	response = chain.run(input_variables = input_variables)
 	return Content_Section(title = section.section_title, content = response.content)
 
-def create_content(course: Course, model = 'gpt3', cap = None) -> Content:
+def create_content(course: Course, model = 'haiku', cap = None) -> Content:
 	"""
 	Wrapper function.
 	Given a learning_objectives_course object, generate the content for the entire course.
 	"""
 	course_content = []
 	for index, learning_objectives_chapter in enumerate(course.learning_objectives.chapters):
-		print(f"\tWriting content for chapter {index+1}...")
+		print(f"Writing content for chapter {index+1}...")
 		chapter_content = []
 		for index, section in enumerate(learning_objectives_chapter.sections[:cap]):
-			print(f"\t\tWriting content for section {index+1}...")
+			print(f"\tWriting content for section {index+1}...")
 			content_section = write_section(course, section, previous_section = chapter_content[-1] if chapter_content else None, model = 'gpt3')
 			chapter_content.append(content_section)
 		course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
@@ -647,7 +623,7 @@ if __name__ == "__main__":
 
 """
 x - incorporate the SME into the content writing
-- add a cap to each wrapper function
+x - add a cap to each wrapper function
 x - tighten up course length, wtf is this (15+ chapters??)
 - fix markdown styling within prompts + the final print function
 - async for wrapper functions
