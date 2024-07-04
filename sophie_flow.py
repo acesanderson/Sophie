@@ -516,7 +516,15 @@ def convert_course_content_to_txt(course: Course) -> str:
 	"""
 	Converts the course content to a text string.
 	"""
-	pass
+	course_text = ""
+	for chapter in course.content.chapters:
+		print(f"\n# {chapter.title}")
+		course_text += f"\n\n# {chapter.title}\n\n"
+		for section in chapter.content:
+			print(f"\t# {section.title}")
+			course_text += f"\n\n# {section.title}\n\n"
+			course_text += section.content
+	return course_text
 
 # Our chains
 
@@ -663,20 +671,7 @@ course.skills = create_course_skills(course)
 course.toc = create_toc(course)
 course.learning_objectives = create_learning_objectives_course(course)
 course.content = create_content(course)
-
-# # pretty print
-# course_text = ""
-
-# for chapter in course.content.chapters:
-# 	print(f"\n# {chapter.title}")
-# 	course_text += f"\n\n# {chapter.title}\n\n"
-# 	for section in chapter.content:
-# 		print(f"\t# {section.title}")
-# 		course_text += f"\n\n# {section.title}\n\n"
-# 		course_text += section.content
-
-# with open('first_sophie_course.md', 'w') as f:
-# 	f.write(course_text)
+course.text = convert_course_content_to_txt(course)
 
 """
 x - add preferred model to each function
