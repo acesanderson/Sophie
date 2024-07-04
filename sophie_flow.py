@@ -679,7 +679,11 @@ course.content = create_content(course)
 # 	f.write(course_text)
 
 """
-- add preferred model to each function
+x - add preferred model to each function
+- tighten up course length, wtf is this (15+ chapters??)
+- fix markdown styling within prompts + the final print function
+- create the object-> string function
 - add a cap to each wrapper function
 - async for wrapper functions
+- save Course objects to a special Sophie collection in MongoDB
 """
