@@ -1,5 +1,5 @@
 """
-Experimenting with generating PromptFlow objects from the Publishing Philosophy that we generated in the Sophie Cannoli.
+This was supposed to leverage Promtptflow
 """
 from pydantic import BaseModel
 from Chain import Chain, Model, Prompt, Parser
@@ -576,7 +576,7 @@ def create_toc(course: Course) -> TOC:
 	"""
 	With the course briefs, we generate the TOCs.
 	"""
-	print("\n\nOur SME is creating TOC...\n\n")
+	print("\nOur SME is creating TOC...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'persona': course.sme.persona, 'course_format': course_format}
 	prompt = Prompt(toc_creation_prompt)
 	model = Model('gpt')
@@ -590,10 +590,10 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
 	"""
-	print("\nCreating learning objectives for a course ection...")
+	print("Creating learning objectives for a course section...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section, 'previous_section': previous_section, 'course_format': course_format}
 	prompt = Prompt(learning_objectives_prompt)
-	model = Model('gpt')
+	model = Model('gpt3')
 	parser = Parser(Learning_Objectives_Section)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
@@ -605,10 +605,12 @@ def create_learning_objectives_course(course: Course) -> Learning_Objectives_Cou
 	With the course briefs, we generate the learning objectives.
 	"""
 	learning_objectives_toc = []
-	for chapter in course.toc.chapters:
+	for index, chapter in enumerate(course.toc.chapters)
+		print(f"Creating learning objectives for chapter {index+1}...")
 		chapter_title = chapter.title
 		learning_objectives_chapter = []
-		for section in chapter.sections:
+		for index, section in enumerate(chapter.sections):
+			print(f"\tCreating learning objectives for section {index+1}...")
 			learning_objectives = create_learning_objectives(course = course, section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
 			learning_objectives_chapter.append(learning_objectives)
 		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
@@ -629,9 +631,20 @@ def write_section(course: Course, section: Learning_Objectives_Section, previous
 
 def create_content(course: Course) -> Content:
 	"""
-	With the course briefs, we generate the content.
+	Wrapper function.
+	Given a learning_objectives_course object, generate the content for the entire course.
 	"""
-	pass
+	course_content = []
+	for index, learning_objectives_chapter in enumerate(course.learning_objectives.chapters):
+		print(f"\tWriting content for chapter {index+1}...")
+		chapter_content = []
+		for index, section in enumerate(learning_objectives_chapter.sections):
+			print(f"\t\tWriting content for section {index+1}...")
+			content_section = write_section(course, section, previous_section = chapter_content[-1] if chapter_content else None)
+			chapter_content.append(content_section)
+			previous_section = content_section
+		course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
+	return Content(chapters = course_content)
 
 def create_course_from_brief(brief: Course_Brief) -> Course:
 	"""
@@ -664,34 +677,25 @@ course.sme = create_sme_prompt(course)
 course.skills = create_course_skills(course)
 course.toc = create_toc(course)
 course.learning_objectives = create_learning_objectives_course(course)
+course.content = create_content(course)
 
-# Now we can generate the content for the course, starting with individual sections.
-section = course.learning_objectives.chapters[0].sections[0]
-previous_section = None
-content_section = write_section(course, section, previous_section)
 
-course_content = []
-for index, learning_objectives_chapter in enumerate(course.learning_objectives.chapters):
-	print(f"\tWriting content for chapter {index}...")
-	chapter_content = []
-	for index, section in enumerate(learning_objectives_chapter.sections):
-		print(f"\t\tWriting content for section {index}...")
-		content_section = write_section(course, section, previous_section)
-		chapter_content.append(content_section)
-		previous_section = content_section
-	course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
+# # pretty print
+# course_text = ""
 
-course.content = Content(chapters = course_content)
+# for chapter in course.content.chapters:
+# 	print(f"\n# {chapter.title}")
+# 	course_text += f"\n\n# {chapter.title}\n\n"
+# 	for section in chapter.content:
+# 		print(f"\t# {section.title}")
+# 		course_text += f"\n\n# {section.title}\n\n"
+# 		course_text += section.content
 
-course_text = ""
+# with open('first_sophie_course.md', 'w') as f:
+# 	f.write(course_text)
 
-for chapter in course.content.chapters:
-	print(f"\n# {chapter.title}")
-	course_text += f"\n\n# {chapter.title}\n\n"
-	for section in chapter.content:
-		print(f"\t# {section.title}")
-		course_text += f"\n\n# {section.title}\n\n"
-		course_text += section.content
-
-with open('first_sophie_course.md', 'w') as f:
-	f.write(course_text)
+"""
+- add preferred model to each function
+- add a cap to each wrapper function
+- async for wrapper functions
+"""
