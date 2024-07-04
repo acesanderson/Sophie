@@ -67,6 +67,87 @@ Sophie Inc.'s business model will be to sell to large companies, so they will fo
 - IT administration (examples: linux administration, database administration, network engineering) 20% of courses
 """.strip()
 
+course_writing_instructions = """
+You are an expert instructional designer and content creator tasked with writing a 1,000-1,500 word section for an online text-based course. Your goal is to create engaging, informative, and well-structured content that facilitates learning and retention.
+
+## Content Guidelines
+
+1. Begin with a brief introduction (2-3 sentences) that outlines the section's objectives and its relevance to the broader course.
+2. Break down the content into 3-5 main subtopics or key points.
+3. For each subtopic:
+   - Provide a clear explanation of the concept
+   - Include relevant examples or case studies
+   - Discuss practical applications or implications
+   - Address common misconceptions or challenges, if applicable
+4. Incorporate engagement elements such as:
+   - Thought-provoking questions
+   - Brief activities or reflections for the learner
+   - Real-world connections or analogies
+5. Conclude the section with a summary of key takeaways (3-4 bullet points) and a brief preview of how this content connects to the next section or chapter.
+
+## Writing Style
+
+- Use clear, concise language appropriate for the target audience.
+- Employ an active voice and conversational tone to maintain engagement.
+- Balance theoretical concepts with practical examples and applications.
+- Use transitional phrases to ensure smooth flow between ideas and subtopics.
+
+## Formatting Guidelines
+
+Use Obsidian-flavored Markdown for formatting. Include the following elements:
+1. Section title as a level 1 heading (H1)
+2. Subtopics as level 2 headings (H2)
+3. Bullet points for lists of items or key points
+4. Numbered lists for sequential steps or processes
+5. Bold text for emphasis on key terms or important concepts
+6. Italics for introducing new terms or for subtle emphasis
+7. Blockquotes for highlighting important quotes or statements
+8. Tables for presenting comparative information or data, when appropriate
+9. Code blocks for any technical content, if relevant to the course topic
+
+## Example Formatting
+
+```markdown
+# [Insert Engaging Section Title]
+
+[Brief introduction to the section]
+
+## [Subtopic 1]
+
+[Content for subtopic 1, including examples and practical applications]
+
+- Key point 1
+- Key point 2
+- Key point 3
+
+## [Subtopic 2]
+
+[Content for subtopic 2, including examples and practical applications]
+
+1. Step one of a process
+2. Step two of a process
+3. Step three of a process
+
+> Important quote or key takeaway
+
+## [Subtopic 3]
+
+[Content for subtopic 3, including examples and practical applications]
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Data 1   | Data 2   | Data 3   |
+| Data 4   | Data 5   | Data 6   |
+
+[Section conclusion and connection to next section/chapter]
+
+### Key Takeaways
+- [Bullet point summary of main points]
+```
+
+Remember to adhere to the 1,000-1,500 word limit while ensuring comprehensive coverage of the section topic. Prioritize clarity, engagement, and practical value for the learner throughout the content.
+"""
+
 # Prompts
 
 course_planning_prompt = """
@@ -249,6 +330,47 @@ For your answer, please return:
 (2) the learning objectives for that section
 """
 
+content_writing_prompt = """
+You are a course writer with a great deal of experience creating engaging text-based learning content
+from a well-structured TOC and well-defined learning objectives.
+
+The courses you create are text-based, hosted online, and are aimed at large enterprises looking to upskill
+employees. These courses are expertly designed to both help companies fill important skill gaps to improve performance
+as well as providing tangible career advice to employees.
+
+The company you work for produces text-baseed courses in this format:
+==========================
+{{course_format}}
+==========================
+
+You have been asked to write content for the section of a course titled:
+{{title}}
+
+This course is aimed at this audience:
+{{audience}}
+
+Here are the high-level skills that need to be covered in this course (not necessarily in your section):
+{{skills}}
+
+Here is the TOC for overall course:
+{{toc}}
+
+The section that you've been asked to create the learning objectives for is titled:
+{{section_title}}
+
+Most importantly, the learning objectives for this section are:
+{{learning_objectives}}
+
+Here are the learning objectives for the previous section for reference (if available):
+"{{previous_section}}"
+
+Here are your instructions for writing the content for this section:
+{{content_instructions}}
+
+Please use your considerable expertise at converting learning objectives into well-written course content to write an engaging
+and informative section for this course.
+""".strip()
+
 content_prompt = """
 2. Outline best practices for course creation, including:
    - Structuring content for optimal learning
@@ -272,6 +394,8 @@ content_prompt = """
    - Inclusive and accessible content
    - Ethical considerations relevant to the field
 """.strip()
+
+# Our Pydantic Classes
 
 class Course_Brief(BaseModel):
 	"""
@@ -414,6 +538,7 @@ def create_course_briefs() -> Course_Brief_List:
 	"""
 	With no input, Managing Editor comes up with the catalog.
 	"""
+	print("\n\nManaging Editor designs 50 course briefs...\n\n")
 	model = Model('gpt')
 	prompt = Prompt(course_planning_prompt)
 	parser = Parser(Course_Brief_List)
@@ -465,6 +590,7 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
 	"""
+	print("\nCreating learning objectives for a course ection...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section, 'previous_section': previous_section, 'course_format': course_format}
 	prompt = Prompt(learning_objectives_prompt)
 	model = Model('gpt')
@@ -479,7 +605,7 @@ def create_learning_objectives_course(course: Course) -> Learning_Objectives_Cou
 	With the course briefs, we generate the learning objectives.
 	"""
 	learning_objectives_toc = []
-	for chapter in course.toc.chapters[:1]:
+	for chapter in course.toc.chapters:
 		chapter_title = chapter.title
 		learning_objectives_chapter = []
 		for section in chapter.sections:
@@ -487,6 +613,19 @@ def create_learning_objectives_course(course: Course) -> Learning_Objectives_Cou
 			learning_objectives_chapter.append(learning_objectives)
 		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
 	return Learning_Objectives_Course(chapters = learning_objectives_toc)
+
+def write_section(course: Course, section: Learning_Objectives_Section, previous_section = None) -> Content_Section:
+	"""
+	Given a course and a learning objectives section, write the content for that section.
+	We will not use pydantic for the actual request here, since we will want to be flexible with models for testing / 
+	the sheer scale of the course library.
+	"""
+	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section.section_title, 'learning_objectives': section.learning_objectives, 'previous_section': previous_section, 'course_format': course_format, 'content_instructions': course_writing_instructions}
+	prompt = Prompt(content_writing_prompt)
+	model = Model('gpt3')
+	chain = Chain(prompt, model)
+	response = chain.run(input_variables = input_variables)
+	return Content_Section(title = section.section_title, content = response.content)
 
 def create_content(course: Course) -> Content:
 	"""
@@ -510,11 +649,6 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	# return course
 	pass
 
-def write_section(course: Course, section: Learning_Objectives_Section) -> Content_Section:
-	"""
-	With the course briefs, we generate the content.
-	"""
-	pass
 
 # our main flow
 
@@ -530,4 +664,24 @@ course.sme = create_sme_prompt(course)
 course.skills = create_course_skills(course)
 course.toc = create_toc(course)
 course.learning_objectives = create_learning_objectives_course(course)
+
+# Now we can generate the content for the course, starting with individual sections.
+section = course.learning_objectives.chapters[0].sections[0]
+previous_section = None
+content_section = write_section(course, section, previous_section)
+
+course_content = []
+for index, learning_objectives_chapter in enumerate(course.learning_objectives.chapters):
+	print(f"\tWriting content for chapter {index}...")
+	chapter_content = []
+	for index, section in enumerate(learning_objectives_chapter.sections):
+		print(f"\t\tWriting content for section {index}...")
+		content_section = write_section(course, section, previous_section)
+		chapter_content.append(content_section)
+		previous_section = content_section
+	course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
+
+course.content = Content(chapters = course_content)
+
+
 
