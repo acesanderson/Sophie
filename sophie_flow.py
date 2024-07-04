@@ -516,76 +516,62 @@ def convert_course_content_to_txt(course: Course) -> str:
 	"""
 	Converts the course content to a text string.
 	"""
-	text = f"Course Title: {course.brief.title}\n\n"
-	text += f"Audience: {course.brief.audience}\n\n"
-	text += f"Skills: {course.brief.skills}\n\n"
-	text += "Table of Contents\n\n"
-	for chapter in course.toc.chapters:
-		text += f"{chapter.title}\n"
-		for section in chapter.sections:
-			text += f"  - {video}\n"
-	text += "\nCourse Content\n\n"
-	for chapter in course.content.chapters:
-		text += f"{chapter.title}\n"
-		for section in chapter.content:
-			text += f"  - {section.title}\n"
-			text += f"    {section.content}\n"
-	return text
+	pass
 
 # Our chains
 
-def create_course_briefs() -> Course_Brief_List:
+def create_course_briefs(model = 'gpt') -> Course_Brief_List:
 	"""
 	With no input, Managing Editor comes up with the catalog.
 	"""
 	print("\n\nManaging Editor designs 50 course briefs...\n\n")
-	model = Model('gpt')
+	model = Model(model)
 	prompt = Prompt(course_planning_prompt)
 	parser = Parser(Course_Brief_List)
 	chain = Chain(prompt, model, parser)
 	response = chain.run()
 	return response.content.course_briefs
 
-def create_sme_prompt(course: Course) -> SME:
+def create_sme_prompt(course: Course, model = 'gpt') -> SME:
 	"""
 	With the course briefs, we generate the SME prompts.
 	"""
 	print("\n\nCreating SME prompt...\n\n")
 	input_variables = vars(course.brief)
 	prompt = Prompt(SME_metaprompt)
-	model = Model('gpt')
+	model = Model(model)
 	parser = Parser(SME)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_course_skills(course: Course) -> Course_Brief:
+def create_course_skills(course: Course, model = 'gpt') -> Course_Brief:
 	"""
 	With the course briefs, we generate the course skills.
 	"""
 	print("\n\nGenerating course skills...\n\n")
 	input_variables = vars(course.brief)
 	prompt = Prompt(course_skills_prompt)
-	model = Model('gpt')
+	model = Model(model)
 	parser = Parser(Course_Skills)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_toc(course: Course) -> TOC:
+def create_toc(course: Course, model = 'gpt') -> TOC:
 	"""
 	With the course briefs, we generate the TOCs.
 	"""
 	print("\nOur SME is creating TOC...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'persona': course.sme.persona, 'course_format': course_format}
 	prompt = Prompt(toc_creation_prompt)
-	model = Model('gpt')
+	model = Model(model)
 	parser = Parser(TOC)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives(course: Course, section: str, previous_section = None) -> Learning_Objectives_Section:
+def create_learning_objectives(course: Course, section: str, previous_section = None, model = 'gpt3') -> Learning_Objectives_Section:
 	"""
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
@@ -599,24 +585,24 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives_course(course: Course) -> Learning_Objectives_Course:
+def create_learning_objectives_course(course: Course, model = 'gpt3') -> Learning_Objectives_Course:
 	"""
 	Wrapper function.
 	With the course briefs, we generate the learning objectives.
 	"""
 	learning_objectives_toc = []
-	for index, chapter in enumerate(course.toc.chapters)
+	for index, chapter in enumerate(course.toc.chapters):
 		print(f"Creating learning objectives for chapter {index+1}...")
 		chapter_title = chapter.title
 		learning_objectives_chapter = []
 		for index, section in enumerate(chapter.sections):
 			print(f"\tCreating learning objectives for section {index+1}...")
-			learning_objectives = create_learning_objectives(course = course, section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None)
+			learning_objectives = create_learning_objectives(course = course, section=section, previous_section=learning_objectives_toc[-1] if learning_objectives_toc else None, model = model)
 			learning_objectives_chapter.append(learning_objectives)
 		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
 	return Learning_Objectives_Course(chapters = learning_objectives_toc)
 
-def write_section(course: Course, section: Learning_Objectives_Section, previous_section = None) -> Content_Section:
+def write_section(course: Course, section: Learning_Objectives_Section, previous_section = None, model = 'gpt3') -> Content_Section:
 	"""
 	Given a course and a learning objectives section, write the content for that section.
 	We will not use pydantic for the actual request here, since we will want to be flexible with models for testing / 
@@ -624,12 +610,12 @@ def write_section(course: Course, section: Learning_Objectives_Section, previous
 	"""
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section.section_title, 'learning_objectives': section.learning_objectives, 'previous_section': previous_section, 'course_format': course_format, 'content_instructions': course_writing_instructions}
 	prompt = Prompt(content_writing_prompt)
-	model = Model('gpt3')
+	model = Model(model)
 	chain = Chain(prompt, model)
 	response = chain.run(input_variables = input_variables)
 	return Content_Section(title = section.section_title, content = response.content)
 
-def create_content(course: Course) -> Content:
+def create_content(course: Course, model = 'gpt3') -> Content:
 	"""
 	Wrapper function.
 	Given a learning_objectives_course object, generate the content for the entire course.
@@ -640,9 +626,8 @@ def create_content(course: Course) -> Content:
 		chapter_content = []
 		for index, section in enumerate(learning_objectives_chapter.sections):
 			print(f"\t\tWriting content for section {index+1}...")
-			content_section = write_section(course, section, previous_section = chapter_content[-1] if chapter_content else None)
+			content_section = write_section(course, section, previous_section = chapter_content[-1] if chapter_content else None, model = 'gpt3')
 			chapter_content.append(content_section)
-			previous_section = content_section
 		course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
 	return Content(chapters = course_content)
 
@@ -678,7 +663,6 @@ course.skills = create_course_skills(course)
 course.toc = create_toc(course)
 course.learning_objectives = create_learning_objectives_course(course)
 course.content = create_content(course)
-
 
 # # pretty print
 # course_text = ""
