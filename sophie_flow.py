@@ -683,5 +683,15 @@ for index, learning_objectives_chapter in enumerate(course.learning_objectives.c
 
 course.content = Content(chapters = course_content)
 
+course_text = ""
 
+for chapter in course.content.chapters:
+	print(f"\n# {chapter.title}")
+	course_text += f"\n\n# {chapter.title}\n\n"
+	for section in chapter.content:
+		print(f"\t# {section.title}")
+		course_text += f"\n\n# {section.title}\n\n"
+		course_text += section.content
 
+with open('first_sophie_course.md', 'w') as f:
+	f.write(course_text)
