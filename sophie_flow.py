@@ -6,33 +6,8 @@ from Chain import Chain, Model, Prompt, Parser
 from typing import List, Optional
 import random
 
-natural_language_description = """
-The company Sophie, Inc. creates text-based courses.
-Their business model is to sell a subscription to a library of courses, and their target customer base is
-large enterprises with upskilling needs.
-The theory of value for their product is the following:
-- large companies need to upskill their workforce to stay competitive
-- basic to advanced training in business functions (like HR, Marketing, Sales, Finance, etc.) can improved
-for the customers' bottom line as they adapt best practices.
-- customers can retain their employees better if they provide training opportunities
-
-The average Sophie, Inc. text-based course is 4 hours long, and purely text based.
-The courses are aimed at foundational topics, like "Digital Marketing 101" or "Human Resources 101".
-
-They will have three parts of their library:
-- leadership and management courses
-- soft skills courses (like Negotiation, Communication, Presentation Skills, etc.)
-- business function courses
-- technical skills courses (software development and IT)
-
-They leverage SMEs to create the content, and have a team of instructional designers to create the course structure.
-There is also a team of content writers, editors, QA specialists, and a managing editor.
-
-We want a workflow that takes a course title as input and outputs a completed course.
-""".strip()
-
 course_format = """
-- **Total Chapters**: 6-8
+- **Total Chapters**: 5-7
 
 The first Chapter should be titled "Introduction", and be composed of two sections:
 1. an overview of the course objectives and structure, with an evocative title that captures
@@ -45,7 +20,7 @@ The last Chapter should be titled "Conclusion", and have two sections:
 
 The remaining chapters are the body of the course.
 
-- **Sections per Chapter**: 3-4 sections
+- **Sections per Chapter**: 2-4 sections
 - **Words per Section**: 1,000 - 1500 words
 
 This structure ensures each course is thorough yet broken down into manageable segments that facilitate
@@ -59,12 +34,12 @@ Their library will address the following audiences:
 - people who want to improve in their current career.
 
 Sophie Inc.'s business model will be to sell to large companies, so they will focus on a mix of business and technology skills. Their library will have the following segments:
-- Leadership and Management (examples: becoming a manager, organizational leadership, strategic planning): 20% of courses
-- Professional Development (examples: interpersonal communication, negotiation, executive presence): 15% of courses
-- Business Functions (examples: Marketing, Sales, Finance): 15% of courses
-- Business software (examples: Excel, SAP, Salesforce): 10% of courses
-- Software development (examples: Java development, web development. machine learning) 20% of courses
-- IT administration (examples: linux administration, database administration, network engineering) 20% of courses
+- Leadership and Management (examples: becoming a manager, organizational leadership, strategic planning): 20 percent of courses
+- Professional Development (examples: interpersonal communication, negotiation, executive presence): 15 percent of courses
+- Business Functions (examples: Marketing, Sales, Finance): 15 percent of courses
+- Business software (examples: Excel, SAP, Salesforce): 10 percent of courses
+- Software development (examples: Java development, web development. machine learning) 20 percent of courses
+- IT administration (examples: linux administration, database administration, network engineering) 20 percent of courses
 """.strip()
 
 course_writing_instructions = """
@@ -181,7 +156,9 @@ For each Course, provide the title, and description of the audience.
 """.strip()
 
 SME_metaprompt = """
-You are an expert prompt engineer specializing in educational content creation.
+You are a corporate recruiter who is especially skilled at finding subject matter experts to create
+training content for your company's employees.
+
 Your task is to generate a system prompt for a subject matter expert (SME) who will be writing
 a text-based course with the following details:
 
@@ -227,7 +204,7 @@ toc_creation_prompt = """
 You are subject matter expert who has been asked to write a course.
 {{persona}}
 
-The company you work for produces text-baseed courses in this format:
+The company you work for produces text-based courses in this format:
 ==========================
 {{course_format}}
 ==========================
@@ -242,6 +219,8 @@ in a logical sequence that facilitates learning and skill development. Each chap
 should be clearly defined and aligned with the course objectives. Include the main
 topics to be covered in each chapter, as well as any subtopics or key points that
 should be addressed.
+
+REMEMBER: THE COURSE SHOULD NOT BE LONGER THAN 5-7 CHAPTERS.
 """.strip()
 
 learning_objectives_prompt = """
@@ -254,7 +233,7 @@ The courses you create are text-based, hosted online, and are aimed at large ent
 employees. These courses are expertly designed to both help companies fill important skill gaps to improve performance
 as well as providing tangible career advice to employees.
 
-The company you work for produces text-baseed courses in this format:
+The company you work for produces text-based courses in this format:
 ==========================
 {{course_format}}
 ==========================
@@ -331,7 +310,10 @@ For your answer, please return:
 """
 
 content_writing_prompt = """
-You are a course writer with a great deal of experience creating engaging text-based learning content
+You are subject matter expert who has been asked to write a course.
+{{persona}}
+
+You are also incredibly skilled at creating engaging text-based learning content
 from a well-structured TOC and well-defined learning objectives.
 
 The courses you create are text-based, hosted online, and are aimed at large enterprises looking to upskill
@@ -532,7 +514,7 @@ def create_course_briefs(model = 'gpt') -> Course_Brief_List:
 	"""
 	With no input, Managing Editor comes up with the catalog.
 	"""
-	print("\n\nManaging Editor designs 50 course briefs...\n\n")
+	print("Managing Editor designs 50 course briefs...")
 	model = Model(model)
 	prompt = Prompt(course_planning_prompt)
 	parser = Parser(Course_Brief_List)
@@ -544,7 +526,7 @@ def create_sme_prompt(course: Course, model = 'gpt') -> SME:
 	"""
 	With the course briefs, we generate the SME prompts.
 	"""
-	print("\n\nCreating SME prompt...\n\n")
+	print("Creating SME prompt...")
 	input_variables = vars(course.brief)
 	prompt = Prompt(SME_metaprompt)
 	model = Model(model)
@@ -557,7 +539,7 @@ def create_course_skills(course: Course, model = 'gpt') -> Course_Brief:
 	"""
 	With the course briefs, we generate the course skills.
 	"""
-	print("\n\nGenerating course skills...\n\n")
+	print("Generating course skills...")
 	input_variables = vars(course.brief)
 	prompt = Prompt(course_skills_prompt)
 	model = Model(model)
@@ -570,7 +552,7 @@ def create_toc(course: Course, model = 'gpt') -> TOC:
 	"""
 	With the course briefs, we generate the TOCs.
 	"""
-	print("\nOur SME is creating TOC...")
+	print("Our SME is creating TOC...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'persona': course.sme.persona, 'course_format': course_format}
 	prompt = Prompt(toc_creation_prompt)
 	model = Model(model)
@@ -584,7 +566,6 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	With the brief and the course skills, generate the learning objectives for a section.
 	This should provide an example of the previous section if available.
 	"""
-	print("Creating learning objectives for a course section...")
 	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section, 'previous_section': previous_section, 'course_format': course_format}
 	prompt = Prompt(learning_objectives_prompt)
 	model = Model('gpt3')
@@ -593,13 +574,13 @@ def create_learning_objectives(course: Course, section: str, previous_section = 
 	response = chain.run(input_variables = input_variables)
 	return response.content
 
-def create_learning_objectives_course(course: Course, model = 'gpt3') -> Learning_Objectives_Course:
+def create_learning_objectives_course(course: Course, model = 'gpt3', cap = None) -> Learning_Objectives_Course:
 	"""
 	Wrapper function.
 	With the course briefs, we generate the learning objectives.
 	"""
 	learning_objectives_toc = []
-	for index, chapter in enumerate(course.toc.chapters):
+	for index, chapter in enumerate(course.toc.chapters[:cap]):
 		print(f"Creating learning objectives for chapter {index+1}...")
 		chapter_title = chapter.title
 		learning_objectives_chapter = []
@@ -616,14 +597,14 @@ def write_section(course: Course, section: Learning_Objectives_Section, previous
 	We will not use pydantic for the actual request here, since we will want to be flexible with models for testing / 
 	the sheer scale of the course library.
 	"""
-	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section.section_title, 'learning_objectives': section.learning_objectives, 'previous_section': previous_section, 'course_format': course_format, 'content_instructions': course_writing_instructions}
+	input_variables = {'persona': course.sme.persona, 'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section.section_title, 'learning_objectives': section.learning_objectives, 'previous_section': previous_section, 'course_format': course_format, 'content_instructions': course_writing_instructions}
 	prompt = Prompt(content_writing_prompt)
 	model = Model(model)
 	chain = Chain(prompt, model)
 	response = chain.run(input_variables = input_variables)
 	return Content_Section(title = section.section_title, content = response.content)
 
-def create_content(course: Course, model = 'gpt3') -> Content:
+def create_content(course: Course, model = 'gpt3', cap = None) -> Content:
 	"""
 	Wrapper function.
 	Given a learning_objectives_course object, generate the content for the entire course.
@@ -632,14 +613,14 @@ def create_content(course: Course, model = 'gpt3') -> Content:
 	for index, learning_objectives_chapter in enumerate(course.learning_objectives.chapters):
 		print(f"\tWriting content for chapter {index+1}...")
 		chapter_content = []
-		for index, section in enumerate(learning_objectives_chapter.sections):
+		for index, section in enumerate(learning_objectives_chapter.sections[:cap]):
 			print(f"\t\tWriting content for section {index+1}...")
 			content_section = write_section(course, section, previous_section = chapter_content[-1] if chapter_content else None, model = 'gpt3')
 			chapter_content.append(content_section)
 		course_content.append(Content_Chapter(title = learning_objectives_chapter.title, content = chapter_content))
 	return Content(chapters = course_content)
 
-def create_course_from_brief(brief: Course_Brief) -> Course:
+def create_course_from_brief(brief: Course_Brief, cap = None) -> Course:
 	"""
 	Wrapper function.
 	With the course briefs, we generate the course.
@@ -649,26 +630,26 @@ def create_course_from_brief(brief: Course_Brief) -> Course:
 	course.sme = create_sme_prompt(course)
 	course.skills = create_course_skills(course)
 	course.toc = create_toc(course)
-	course.learning_objectives = create_learning_objectives_course(course)
-	course.content = create_content(course)
+	course.learning_objectives = create_learning_objectives_course(course, cap = cap)
+	course.content = create_content(course, cap = cap)
 	course.text = convert_course_content_to_txt(course)
 	return course
 
 if __name__ == "__main__":
-	print("Dreaming up the ideal course library...\n\n")
+	print("Dreaming up the ideal course library...")
 	course_briefs = create_course_briefs()
-	print("\n\nPicking one course:\n\n")
+	print("Picking one course:")
 	brief = random.choice(course_briefs)
-	course = create_course_from_brief(brief)
+	course = create_course_from_brief(brief, cap = 1) # throttling this for testing purposes; remove cap to create entire course. cap = number of chapters to create.
 	print("=======================================================")
 	for key in course.__dict__.keys():
 		print(f"{key}: {course.__dict__[key]}")
 
-
 """
-- tighten up course length, wtf is this (15+ chapters??)
-- fix markdown styling within prompts + the final print function
+x - incorporate the SME into the content writing
 - add a cap to each wrapper function
+x - tighten up course length, wtf is this (15+ chapters??)
+- fix markdown styling within prompts + the final print function
 - async for wrapper functions
 - save Course objects to a special Sophie collection in MongoDB
 x - add preferred model to each function
