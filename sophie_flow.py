@@ -253,9 +253,6 @@ Here is the TOC for overall course:
 The section that you've been asked to create the learning objectives for is titled:
 {{section_title}}
 
-Here are the learning objectives for the previous section for reference:
-{{previous_section}}
-
 Please use your considerable expertise at converting skills into learning objectives to create a set of learning objectives
 for this section.
 
@@ -567,6 +564,48 @@ def create_learning_objectives_course(course: Course, model = 'haiku', cap = Non
 		learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
 	return Learning_Objectives_Course(chapters = learning_objectives_toc)
 
+def create_learning_objectives_course_async(course: Course, model = 'gpt3', cap = None) -> Learning_Objectives_Course:
+	"""
+	Wrapper function.
+	With the course briefs, we generate the learning objectives.
+	"""
+	# Generate the prompts; we will run these asynchronously
+	prompt_dicts = []
+	for index, chapter in enumerate(course.toc.chapters[:cap]):
+		for index, section in enumerate(chapter.sections):
+			prompt_dict = {}
+			print(f"\tCreating learning objectives prompts for section {index+1}...")
+			learning_objectives_prompt = create_learning_objectives_prompt(course = course, section=section, model = model)
+			prompt_dict['section_title'] = section
+			prompt_dict['prompt'] = learning_objectives_prompt
+			prompt_dicts.append(prompt_dict)
+		# Run the prompts asynchronously
+		prompts = [prompt_dict['prompt'] for prompt_dict in prompt_dicts]
+		model = Model(model)
+		results = model.run_async(prompts, pydantic_model = Learning_Objectives_Section, verbose = True)
+		print("Results:", results)
+		# Process results as a structured learning objectives course object
+		learning_objectives_toc = []
+		for index, chapter in enumerate(course.toc.chapters[:cap]):
+			chapter_title = chapter.title
+			learning_objectives_chapter = []
+			for index, section in enumerate(chapter.sections):
+				learning_objectives = results[index]
+				learning_objectives_chapter.append(learning_objectives)
+			learning_objectives_toc.append(Learning_Objectives_Chapter(title = chapter_title, sections = learning_objectives_chapter))
+		# Return results
+	return Learning_Objectives_Course(chapters = learning_objectives_toc)
+
+def create_learning_objectives_prompt(course: Course, section: str, model = 'gpt3') -> Learning_Objectives_Section:
+	"""
+	With the brief and the course skills, generate the learning objectives for a section.
+	This should provide an example of the previous section if available.
+	"""
+	input_variables = {'title': course.brief.title, 'audience': course.brief.audience, 'skills': course.skills.skills, 'toc': course.toc, 'section_title': section, 'course_format': course_format}
+	prompt_template = Prompt(learning_objectives_prompt)
+	prompt = prompt_template.render(input_variables = input_variables)
+	return prompt
+
 def write_section(course: Course, section: Learning_Objectives_Section, previous_section = None, model = 'gpt3') -> Content_Section:
 	"""
 	Given a course and a learning objectives section, write the content for that section.
@@ -606,7 +645,8 @@ def create_course_from_brief(brief: Course_Brief, cap = None) -> Course:
 	course.sme = create_sme_prompt(course)
 	course.skills = create_course_skills(course)
 	course.toc = create_toc(course)
-	course.learning_objectives = create_learning_objectives_course(course, cap = cap)
+	# course.learning_objectives = create_learning_objectives_course(course, cap = cap)
+	course.learning_objectives = create_learning_objectives_course_async(course, cap = cap)
 	course.content = create_content(course, cap = cap)
 	course.text = convert_course_content_to_txt(course)
 	return course
@@ -616,7 +656,7 @@ if __name__ == "__main__":
 	course_briefs = create_course_briefs()
 	print("Picking one course:")
 	brief = random.choice(course_briefs)
-	course = create_course_from_brief(brief, cap = 2) # throttling this for testing purposes; remove cap to create entire course. cap = number of chapters to create.
+	course = create_course_from_brief(brief) # set cap = 2 to throttle this for testing purposes; remove cap to create entire course. cap = number of chapters to create.
 	print("=======================================================")
 	for key in course.__dict__.keys():
 		print(f"{key}: {course.__dict__[key]}")
@@ -643,6 +683,6 @@ prompts = ['birds', 'mammals', 'presidents', 'planets', 'countries', 'cities']
 prompt_template = Prompt("Name ten {{objects}}.")
 prompts = [prompt_template.render(input_variables = {'objects': prompt}) for prompt in prompts]
 model = Model('gpt3')
-results = model.run_async(prompts, pydantic_model = Objects, verbose = False
+results = model.run_async(prompts, pydantic_model = Objects, verbose = False)
 
 
