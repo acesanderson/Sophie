@@ -672,17 +672,17 @@ x - tighten up course length, wtf is this (15+ chapters??)
 x - fix markdown styling within prompts + the final print function
 """
 
-from Chain import Prompt, Model, Parser, Chain
-from pydantic import BaseModel
-from typing import List, Optional
+# from Chain import Prompt, Model, Parser, Chain
+# from pydantic import BaseModel
+# from typing import List, Optional
 
-class Objects(BaseModel):
-	objects: List[str]
+# class Objects(BaseModel):
+# 	objects: List[str]
 
-prompts = ['birds', 'mammals', 'presidents', 'planets', 'countries', 'cities']
-prompt_template = Prompt("Name ten {{objects}}.")
-prompts = [prompt_template.render(input_variables = {'objects': prompt}) for prompt in prompts]
-model = Model('gpt3')
-results = model.run_async(prompts, pydantic_model = Objects, verbose = False)
+# prompts = ['birds', 'mammals', 'presidents', 'planets', 'countries', 'cities']
+# prompt_template = Prompt("Name ten {{objects}}.")
+# prompts = [prompt_template.render(input_variables = {'objects': prompt}) for prompt in prompts]
+# model = Model('gpt3')
+# results = model.run_async(prompts, pydantic_model = Objects, verbose = False)
 
 
